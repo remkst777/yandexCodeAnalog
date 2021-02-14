@@ -1,0 +1,1 @@
+{"version":3,"file":"service.js","sourceRoot":"","sources":["../../src/dogs/service.ts"],"names":[],"mappings":";;;;;;;;AAAA,2CAA4C;AAG5C,IAAqB,OAAO,GAA5B,MAAqB,OAAO;IAC1B,QAAQ;QACN,OAAO,cAAc,CAAC;IACxB,CAAC;IAED,SAAS;QACP,OAAO,gBAAgB,CAAC;IAC1B,CAAC;CACF,CAAA;AARoB,OAAO;IAD3B,mBAAU,EAAE;GACQ,OAAO,CAQ3B;kBARoB,OAAO"}

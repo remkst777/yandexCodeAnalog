@@ -1,0 +1,31 @@
+{
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "bootstrap": "lerna bootstrap",
+    "dev": "concurrently --kill-others --success first \"npm run start:dev --prefix ./packages/server\" \"npm run serve --prefix ./packages/ui\"",
+    "build": "lerna run build",
+    "publish": "lerna publish"
+  },
+  "devDependencies": {
+    "concurrently": "^3.6.0",
+    "lerna": "^2.11.0",
+    "vuepress": "^0.10.1",
+    "vuepress-theme-vue": "^1.1.0"
+  },
+  "engines": {
+    "node": ">= 8"
+  },
+  "dependencies": {
+    "eslint-plugin-vue": "^7.2.0",
+    "lodash": "^4.17.20",
+    "start-server-webpack-plugin": "^2.2.5",
+    "ts-loader": "^8.0.12",
+    "webpack": "^5.11.0",
+    "webpack-cli": "^4.3.0",
+    "webpack-node-externals": "^2.5.2"
+  }
+}
