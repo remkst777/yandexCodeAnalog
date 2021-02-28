@@ -10,8 +10,8 @@ export default class {
     return this.service.createChannel(body);
   }
 
-  @Get(':channelId')
-  async getChannel(@Req() req) {
-    return this.service.getChannel(req.params.channelId);
+  @Get(':channelId/user/:userId')
+  async getChannel(@Req() { params: { channelId, userId } }) {
+    return this.service.getChannel({ channelId, userId });
   }
 }

@@ -1,31 +1,61 @@
 <template>
   <div class="home">
-    <HelloWorld msg="Homepage" />
-
-    <div>
-      <button @click="createChannel">Create channel</button>
+    <div />
+    <div />
+    <div @click="openCreateChannelModal">
+      <PokemonBall />
     </div>
+
+    <CreateChannelModal />
   </div>
 </template>
 
 <script>
-import HelloWorld from "@/components/HelloWorld.vue";
+import { MODAL_WINDOWS } from '@/common/constants';
+
+import PokemonBall from '@/components/PokemonBall.vue';
+import CreateChannelModal from '@/components/CreateChannelModal.vue';
 
 export default {
-  name: "home",
+  name: 'home',
+  data: function () {
+    return {
+      channelName: '',
+      userName: '',
+    };
+  },
   components: {
-    HelloWorld,
+    PokemonBall,
+    CreateChannelModal,
   },
   methods: {
-    createChannel: async function () {
-      await fetch("/channel", {
-        method: "post",
-        body: JSON.stringify({ whoCreatedChannel: "user1" }),
-        headers: { "content-type": "application/json" },
-      })
-        .then((x) => x.json())
-        .then(({ channelId }) => this.$router.push(`/channel/${channelId}`));
+    openCreateChannelModal: function () {
+      this.$modal.show(MODAL_WINDOWS.CREATE_CHANNEL);
     },
   },
 };
 </script>
+
+<style scoped lang="scss">
+.home {
+  position: relative;
+
+  > div:nth-child(1),
+  > div:nth-child(2) {
+    height: 50vh;
+    width: 100vw;
+    background-color: #262626;
+  }
+
+  > div:nth-child(1) {
+    border-bottom: 6px solid #ccc;
+  }
+
+  > div:nth-child(3) {
+    position: absolute;
+    top: calc(50% - 100px);
+    left: calc(50% - 100px);
+    cursor: pointer;
+  }
+}
+</style>

@@ -9,65 +9,58 @@ import {
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 
+import ChannelService from '../channel/service';
+import { SOCKET_METHODS } from '../../common/constants';
+
 @WebSocketGateway()
-export class EventsGateway {
+export class EventsGateway extends ChannelService {
   @WebSocketServer()
   server: Server;
 
   channels = {};
+  usersOnline = {};
 
-  constructor() {
-    setInterval(() => {
-      Object.keys(this.channels).forEach(channelId => {
-        fs.writeFileSync(
-          `src/db/sessions/${channelId}.json`,
-          JSON.stringify(this.channels[channelId]),
-        );
-      });
-    }, 10000);
+  isUserOnlineHandling({ channelId, userId, value }) {
+    if (this.usersOnline[channelId]) {
+      this.usersOnline[channelId][userId] = value;
+    } else {
+      this.usersOnline[channelId] = { [userId]: value };
+    }
   }
 
-  @SubscribeMessage('joinRoom')
-  joinRoom(client, channelId) {
+  @SubscribeMessage(SOCKET_METHODS.NEW_USER_ROOM)
+  newRoomUser(client, { channelId, userId }) {
     client.join(channelId);
+    this.isUserOnlineHandling({ channelId, userId, value: true });
+
+    this.server.to(channelId).emit(SOCKET_METHODS.NEW_USER_ROOM, this.usersOnline[channelId]);
   }
 
-  @SubscribeMessage('leaveRoom')
-  leaveRoom(client, channelId) {
+  @SubscribeMessage(SOCKET_METHODS.JOIN_ROOM)
+  joinRoom(client, { channelId, userId }) {
+    client.join(channelId);
+    this.isUserOnlineHandling({ channelId, userId, value: true });
+
+    this.server.to(channelId).emit(SOCKET_METHODS.USERS_ONLINE, this.usersOnline[channelId]);
+  }
+
+  @SubscribeMessage(SOCKET_METHODS.LEAVE_ROOM)
+  leaveRoom(client, { channelId, userId }) {
     client.leave(channelId);
+    this.isUserOnlineHandling({ channelId, userId, value: false });
+
+    this.server.to(channelId).emit(SOCKET_METHODS.USERS_ONLINE, this.usersOnline[channelId]);
   }
 
-  ggg = '';
+  @SubscribeMessage(SOCKET_METHODS.SEND_MESSAGE)
+  async sendMessage(@MessageBody() body) {
+    const { channelId, message, userId } = body;
 
-  @SubscribeMessage('sendMessage')
-  sendMessage(@MessageBody() body) {
-    const { channelId, message } = body;
+    const { content } = await (this.channels[channelId] || this.getChannel({ channelId, userId }));
 
-    message.forEach(({ type, currentCursorIndex, difference }) => {
-      if (type === 'ADD') {
-        console.log(this.ggg)
+    fs.writeFileSync(`src/db/contents/${channelId}.json`, JSON.stringify([...content, ...message]));
 
-        this.ggg =
-          this.ggg.slice(0, currentCursorIndex) +
-          difference +
-          this.ggg.slice(currentCursorIndex, this.ggg.length);
-      } else {
-        this.ggg =
-          this.ggg.slice(0, currentCursorIndex) +
-          this.ggg.slice(currentCursorIndex + difference.length, this.ggg.length);
-      }
-    });
-
-    // if (!this.channels[channelId]) {
-    //   const fsChannel = fs.readFileSync(`src/db/sessions/${channelId}.json`);
-    //   this.channels[channelId] = JSON.parse(fsChannel.toString());
-    // }
-
-    // this.channels[channelId].content = content;
-
-    // this.server.to(channelId).emit(`sentMessage`, this.channels[channelId]);
-
-    this.server.to(channelId).emit(`sentMessage`, { content: this.ggg });
+    this.server.to(channelId).emit(SOCKET_METHODS.SENT_MESSAGE, message);
   }
 }
 

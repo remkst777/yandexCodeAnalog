@@ -1,1 +1,0 @@
-{"whoCreatedChannel":"user1","whoJoined":["user1"],"whoIsOnline":[],"content":"There is no \"Text was selected\" (DOM) event, but you can bind a document.selection.createRange().text\n event to the document.body. Within that event handler, you might just document.selection.createRange().text\n the\n\n","channelId":1609602788428}

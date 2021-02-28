@@ -1,62 +1,90 @@
-import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
-import * as fs from "fs";
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import * as fs from 'fs';
 
-const channelDto = {
-  whoCreatedChannel: "",
-  whoJoined: [],
-  whoIsOnline: [],
-  content: "",
-  channelId: "",
-};
+import UserService from '../users/service';
+import { USER_ROLES } from '../../common/constants';
 
 @Injectable()
 export default class Service {
-  createChannel({ whoCreatedChannel }) {
+  async createChannel({ userName, channelName }) {
     try {
+      const NewUserService = new UserService();
+
       const channelId = Date.now();
 
-      if (!whoCreatedChannel) {
-        throw new HttpException("BAD_REQUEST", HttpStatus.BAD_REQUEST);
+      if (!userName || !channelName) {
+        throw new HttpException('BAD_REQUEST', HttpStatus.BAD_REQUEST);
       }
 
+      const { userId } = await NewUserService.saveUser({ role: USER_ROLES.ADMIN, userName });
+
       fs.writeFileSync(
-        `src/db/sessions/${channelId}.json`,
+        `src/db/channels/${channelId}.json`,
         JSON.stringify({
-          ...channelDto,
-          whoCreatedChannel,
-          whoJoined: [whoCreatedChannel],
+          userId,
+          whoJoined: [userId],
           channelId,
-        })
+          channelName,
+        }),
       );
 
-      return { channelId };
+      fs.writeFileSync(`src/db/contents/${channelId}.json`, JSON.stringify([]));
+
+      return { channelId, userId };
     } catch (err) {
       if (err instanceof HttpException) {
         throw err;
       }
 
-      throw new HttpException(
-        "INTERNAL_SERVER_ERROR",
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      throw new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  getChannel(channelId) {
+  async addUserToChannel({ channelId, userId }) {
     try {
-      const content = fs.readFileSync(`src/db/sessions/${channelId}.json`);
-      const kek = JSON.parse(content.toString());
+      const channel = fs.readFileSync(`src/db/channels/${channelId}.json`);
+      const parsedChannel = JSON.parse(channel.toString());
 
-      return kek;
+      fs.writeFileSync(
+        `src/db/channels/${channelId}.json`,
+        JSON.stringify({ ...parsedChannel, whoJoined: [...parsedChannel.whoJoined, userId] }),
+      );
     } catch (err) {
       if (err instanceof HttpException) {
         throw err;
       }
 
-      throw new HttpException(
-        "INTERNAL_SERVER_ERROR",
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      throw new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getChannel({ channelId, userId }) {
+    try {
+      const NewUserService = new UserService();
+
+      const channel = fs.readFileSync(`src/db/channels/${channelId}.json`);
+      const parsedChannel = JSON.parse(channel.toString());
+
+      if (!parsedChannel.whoJoined.includes(userId)) {
+        throw new HttpException('FORBIDDEN', HttpStatus.FORBIDDEN);
+      }
+
+      const content = fs.readFileSync(`src/db/contents/${channelId}.json`);
+      const parsedContent = JSON.parse(content.toString());
+
+      const users = await NewUserService.getUser();
+
+      return {
+        ...parsedChannel,
+        content: parsedContent,
+        whoJoined: parsedChannel.whoJoined.map((userId) => [userId, ...users[userId]]),
+      };
+    } catch (err) {
+      if (err instanceof HttpException) {
+        throw err;
+      }
+
+      throw new HttpException('INTERNAL_SERVER_ERROR', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
