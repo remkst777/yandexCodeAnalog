@@ -1,6 +1,5 @@
 node_modules
-server/src/db/channels
-server/src/db/contents
-server/dist
-server/node_modules
-ui/node_modules
+packages/server/src/db
+packages/server/dist
+packages/server/node_modules
+packages/ui/node_modules
