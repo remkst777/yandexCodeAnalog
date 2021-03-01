@@ -33,7 +33,7 @@ export default {
   name: 'history-info-tool',
   methods: {
     getFormattedDate: function (dateMs) {
-      return new Date(dateMs).toISOString().split('.')[0];
+      return new Date(dateMs).toLocaleString();
     },
     getUserName: function (userId) {
       return this.$parent.channel.whoJoined.find((user) => user[0] === userId)[2];
